@@ -1,0 +1,19 @@
+import { contextBridge, ipcRenderer } from 'electron'
+console.log("--- Preload script started ---"); // Add this log
+
+contextBridge.exposeInMainWorld('electronAPI', {
+    send: (channel: string, data: any) => {
+        // whitelist channels
+        let validChannels = ['toMain']
+        if (validChannels.includes(channel)) {
+            ipcRenderer.send(channel, data);
+        }
+    },
+    receive: (channel: string, func: any) => {
+        let validChannels = ['fromMain']
+        if (validChannels.includes(channel)) {
+            // Deliberately strip event as it includes `sender` 
+            ipcRenderer.on(channel, (event, ...args) => func(...args));
+        }
+    }
+})
