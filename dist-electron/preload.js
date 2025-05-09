@@ -11,6 +11,9 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
       electron.ipcRenderer.on(channel, (event, ...args) => func(...args));
     }
   },
+  invoke: (channel, ...args) => {
+    return electron.ipcRenderer.invoke(channel, ...args);
+  },
   // Expose a function to send a message to the main process requesting the dialog
   openFileSelectDialog: () => electron.ipcRenderer.send("open-file-dialog"),
   // Expose a function to listen for the result from the main process

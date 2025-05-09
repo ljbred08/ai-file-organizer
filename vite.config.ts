@@ -55,6 +55,7 @@ export default defineConfig(({ command }) => {
       rollupOptions: {
         external: [
           'electron',
+          //'vectra',
           ...builtinModules,
         ],
       },

@@ -51,7 +51,7 @@ export default defineComponent({
 
     const processFiles = () => {
       if (window.electronAPI && window.electronAPI.send) {
-        window.electronAPI.send('processFiles', [...selectedPaths.value]);
+        window.electronAPI.send('process-files', [...selectedPaths.value]);
       } else {
         console.error('Electron API not available or send not exposed.');
       }

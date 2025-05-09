@@ -1,8 +1,8 @@
 import { app, ipcMain, BrowserWindow, dialog } from 'electron'
 import { MainWindow } from './main/MainWindow'  // Corrected relative path
-import * as fs from 'fs';
-import * as path from 'path';
-import { initChromaDB, getOrCreateCollection, storeFiles } from './chromadb';
+import { getAllFilesInPaths, processAndStoreFiles, searchFiles } from './fileProcessing';
+import 'dotenv/config';
+import { semanticTextSearch } from './vectra-db';
 console.log('--- Main script started ---')
 
 
@@ -74,49 +74,19 @@ ipcMain.on('open-file-dialog', async (event) => {
   event.sender.send('selected-file-paths', result.filePaths);
 });
 
-ipcMain.on('processFiles', async (event, paths: string[]) => {
-  console.log('processFiles event received');
-  const allFiles = await getAllFilesInPaths(paths);
-  console.log('All files:', allFiles);
-  await processAndStoreFiles(allFiles);
+ipcMain.on('process-files', async (event, paths: string[]) => {
+  console.log('[process-files] Received paths:', paths);
+
+  const files = await getAllFilesInPaths(paths);
+  console.log('[process-files] Found files:', files);
+
+  await processAndStoreFiles(files);
+  console.log('[process-files] Files processed and stored in Vectra.');
+
+  return { success: true };
 });
 
-async function getAllFilesInPaths(paths: string[]): Promise<string[]> {
-  const allFiles: string[] = [];
-  for (const singlePath of paths) {
-    try {
-      const files = await fs.promises.readdir(singlePath, { withFileTypes: true });
-      for (const file of files) {
-        const fullPath = path.join(singlePath, file.name);
-        if (file.isDirectory()) {
-          const subFiles = await getAllFilesInPaths([fullPath]);
-          allFiles.push(...subFiles);
-        } else {
-          allFiles.push(fullPath);
-        }
-      }
-    } catch (error) {
-      console.error('Error reading directory:', error);
-    }
-  }
-  return allFiles;
-}
-      
-
-async function processAndStoreFiles(files: string[]) {
-  try {
-    await initChromaDB();
-    const collection = await getOrCreateCollection('fileEmbeddings');
-    // Generate embeddings for each file
-    const embeddings = files.map(getEmbeddingForFile);
-    await storeFiles(collection, files, embeddings);
-  } catch (e) {
-    console.error('Error with ChromaDB collection:', e);
-  }
-}
-
-// Placeholder: Replace with actual embedding logic later
-function getEmbeddingForFile(filePath: string): string {
-  // For now, just return an empty string or dummy embedding
-  return '';
-}
+ipcMain.handle('search-files', async (event, query: string, limit: number = 5) => {
+  console.log('[search-files] Received query:', query);
+  return await semanticTextSearch(query, limit);
+});
