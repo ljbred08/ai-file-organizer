@@ -78,7 +78,7 @@ export async function semanticTextSearch(query: string, limit = 5) {
 }
 
 export async function logAllVectraItems() {
-  const items = await getVectraIndex().listItems();
+  const items = await listItems();
   const summarized = items.map(item => ({
     ...item,
     vector: `[${item.vector.slice(0, 5).join(', ')}${item.vector.length > 5 ? ', ...' : ''}] (length ${item.vector.length})`
