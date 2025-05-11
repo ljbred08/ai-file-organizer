@@ -14,17 +14,6 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
 
-declare global {
-  interface Window {
-    electronAPI?: {
-      send: (channel: string, data: any) => void;
-      receive: (channel: string, func: any) => void;
-      openFileSelectDialog: () => void;
-      onFileSelect: (callback: (paths: string[] | undefined) => void) => void;
-    };
-  }
-}
-
 export default defineComponent({
   name: 'FileSelector',
   setup() {

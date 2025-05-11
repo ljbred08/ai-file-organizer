@@ -1,12 +1,12 @@
 import { app, ipcMain, BrowserWindow, dialog } from 'electron'
 import { MainWindow } from './main/MainWindow'  // Corrected relative path
 import { getAllFilesInPaths, processAndStoreFiles, searchFiles } from './fileProcessing';
+import { performClustering } from './hdbscan';
+import { createFolderStructureFromTree } from './treeToFolderStructure';
+import { smartRenameFolders } from './smartRenameFolders';
 import 'dotenv/config';
-import { semanticTextSearch } from './vectra-db';
+import { semanticTextSearch, listItems } from './vectra-db';
 console.log('--- Main script started ---')
-
-
-
 
 
 // Auto-updates
@@ -52,14 +52,13 @@ mainApp.on('web-contents-created', (event, contents) => {
     })
 
 
-
     // Add other relevant error handlers as needed
 })
 
 ipcMain.on('open-file-dialog', async (event) => {
   console.log('open-file-dialog event received');
   const mainWindow = BrowserWindow.fromWebContents(event.sender);
-  
+
   if (!mainWindow) {
       console.error('Could not find mainWindow for file dialog.');
       return;
@@ -89,4 +88,61 @@ ipcMain.on('process-files', async (event, paths: string[]) => {
 ipcMain.handle('search-files', async (event, query: string, limit: number = 5) => {
   console.log('[search-files] Received query:', query);
   return await semanticTextSearch(query, limit);
+});
+
+ipcMain.handle('cluster-files', async () => {
+ console.log('cluster-files event received');
+ // Call the function to cluster files
+ const tree = await performClustering();
+ // Return the result
+ return tree;
+});
+
+ipcMain.handle('create-folder-structure', async (event) => {
+ console.log('create-folder-structure event received');
+ const mainWindow = BrowserWindow.fromWebContents(event.sender);
+
+ if (!mainWindow) {
+ console.error('Could not find mainWindow for folder structure creation.');
+ return;
+ }
+
+ const result = await dialog.showOpenDialog(mainWindow, {
+ properties: ['openDirectory'], // Only allow selecting a single directory
+ title: 'Select Directory to Create Folder Structure'
+ });
+
+ if (result.canceled || result.filePaths.length === 0) {
+ console.log('Folder structure creation cancelled');
+ return;
+ }
+
+ const rootDir = result.filePaths[0];
+ const tree = await performClustering();
+ const embeddings = await listItems();
+ const hclustMetadata = embeddings.map(item => item.metadata);
+ createFolderStructureFromTree(tree, hclustMetadata, rootDir);
+});
+
+ipcMain.handle('smart-rename-folders', async (event) => {
+ console.log('smart-rename-folders event received');
+ const mainWindow = BrowserWindow.fromWebContents(event.sender);
+
+ if (!mainWindow) {
+ console.error('Could not find mainWindow for smart rename folders.');
+ return;
+}
+
+ const result = await dialog.showOpenDialog(mainWindow, {
+ properties: ['openDirectory'], // Only allow selecting a single directory
+ title: 'Select Directory to Smart Rename'
+ });
+
+ if (result.canceled || result.filePaths.length === 0) {
+ console.log('Smart rename folders cancelled');
+ return;
+}
+
+const rootDir = result.filePaths[0];
+await smartRenameFolders(rootDir);
 });

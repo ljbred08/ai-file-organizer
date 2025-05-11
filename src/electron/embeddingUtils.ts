@@ -9,43 +9,7 @@ const voyageClient = new VoyageAIClient({
   apiKey: process.env.VOYAGE_API_KEY  
 });  
   
-// For the jina-clip-v2 model  
-export async function getJinaClipEmbedding(input: Buffer | string, modality: "vision" | "text"): Promise<any> {  
-    const model = "zsxkib/jina-clip-v2:5050c3108bab23981802011a3c76ee327cc0dbfdd31a2f4ef1ee8ef0d3f0b448";  
-    try {  
-      const replicate = new Replicate();  
-      let modelInput: any;  
-      if (modality === "vision") {  
-        modelInput = { image: input, output_format: "array", embedding_dim: 1024 };  
-      } else if (modality === "text") {  
-        modelInput = { text: input, output_format: "array", embedding_dim: 1024 };  
-      } else {  
-        throw new Error("Unsupported modality");  
-      }  
-      // Wrap modelInput in an 'input' object as required by the API  
-      const output = await replicate.run(model, { input: modelInput});  
-      return output;  
-    } catch (error) {  
-      console.error(`[getJinaClipEmbedding] Error:`, error);  
-      return [];  
-    }  
-}  
-  
-// For the imagebind model  
-export async function getImageBindEmbedding(input: Buffer, modality: string): Promise<number[]> {  
-  const model = "daanelson/imagebind:0383f62e173dc821ec52663ed22a076d9c970549c209666ac3db181618b7a304";  
-  try {  
-    const replicate = new Replicate();  
-    const output = await replicate.run(  
-      model,  
-      { input: { input, modality } }  
-    );  
-    return Array.isArray(output) ? output : [];  
-  } catch (error) {  
-    console.error(`[getImageBindEmbedding] Error:`, error);  
-    return [];  
-  }  
-}  
+ 
   
 // For Voyage text embedding models  
 export async function getVoyageTextEmbedding(input: string): Promise<number[]> {  
@@ -160,3 +124,53 @@ export async function getEmbedding({
   }  
   return output;  
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+// For the jina-clip-v2 model  
+export async function getJinaClipEmbedding(input: Buffer | string, modality: "vision" | "text"): Promise<any> {  
+  const model = "zsxkib/jina-clip-v2:5050c3108bab23981802011a3c76ee327cc0dbfdd31a2f4ef1ee8ef0d3f0b448";  
+  try {  
+    const replicate = new Replicate();  
+    let modelInput: any;  
+    if (modality === "vision") {  
+      modelInput = { image: input, output_format: "array", embedding_dim: 1024 };  
+    } else if (modality === "text") {  
+      modelInput = { text: input, output_format: "array", embedding_dim: 1024 };  
+    } else {  
+      throw new Error("Unsupported modality");  
+    }  
+    // Wrap modelInput in an 'input' object as required by the API  
+    const output = await replicate.run(model, { input: modelInput});  
+    return output;  
+  } catch (error) {  
+    console.error(`[getJinaClipEmbedding] Error:`, error);  
+    return [];  
+  }  
+}  
+
+// For the imagebind model  
+export async function getImageBindEmbedding(input: Buffer, modality: string): Promise<number[]> {  
+const model = "daanelson/imagebind:0383f62e173dc821ec52663ed22a076d9c970549c209666ac3db181618b7a304";  
+try {  
+  const replicate = new Replicate();  
+  const output = await replicate.run(  
+    model,  
+    { input: { input, modality } }  
+  );  
+  return Array.isArray(output) ? output : [];  
+} catch (error) {  
+  console.error(`[getImageBindEmbedding] Error:`, error);  
+  return [];  
+}  
+} 
