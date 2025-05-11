@@ -241745,7 +241745,8 @@ async function smartRenameFolders(rootDir, readFileContents = true) {
       console.log("Folder contents:", latestFiles);
       let errorCount = 0;
       let suggestedName;
-      while (errorCount < 3) {
+      let attempts = 4;
+      while (errorCount < attempts) {
         try {
           suggestedName = await getFolderNameSuggestion(dir, latestFiles, readFileContents);
           await renameDirectory(dir, suggestedName);
@@ -241755,8 +241756,8 @@ async function smartRenameFolders(rootDir, readFileContents = true) {
           errorCount++;
         }
       }
-      if (errorCount >= 3) {
-        console.error(`Failed to rename directory ${dir} after 3 attempts`);
+      if (errorCount >= attempts) {
+        console.error(`Failed to rename directory ${dir} after ${errorCount} attempts`);
       }
     }
   }
@@ -241777,7 +241778,7 @@ You have tools available:
 1. read_file_content(file_name: string): Reads the first 300 characters of a file
 2. format_response(folder_name: string): Formats the folder name and returns it
 
-Use the read_file_content tool to get more context about the files if needed (if the file has a non-descriptive name). You can only read files that can be read as text, so don't try to read .zip, .mp3, etc. (this includes folders which have no extension).
+Use the read_file_content tool to get more context about the files only if needed (if the file has a non-descriptive name). You can only read files that can be read as text, so don't try to read .zip, .mp3, etc. (this includes folders which have no extension).
 Use the format_response tool to return the final folder name. Do not return any text other than the folder name - the format_response tool will handle the formatting.`
     }, {
       role: "user",
