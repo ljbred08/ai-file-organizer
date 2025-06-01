@@ -169,7 +169,7 @@ My Documents`
     if (completion && completion.choices[0].message && completion.choices[0].message.content) {
       return completion.choices[0].message.content.trim();
     } else {
-      console.error('Failed to get a valid folder name suggestion from Groq.');
+      console.error('Failed to get a valid folder name suggestion from OpenRouter.');
       return 'Unnamed Folder';
     }
   }

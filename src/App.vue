@@ -1,10 +1,16 @@
 <template>
-  <div>
-    <FileSearch />
-    <h1>My File Organizer</h1>
-    <FileSelector />
-    <FileClusteringButton />
-    <!-- Other parts of your app -->
+  <div class="app-bg">
+    <div class="center-container">
+      <div class="search-card">
+        <FileSearch />
+      </div>
+      <h1 class="main-title">My File Organizer</h1>
+      <div class="subtitle">Organize your files effortlessly</div>
+      <div class="actions-row">
+        <FileSelector />
+        <FileClusteringButton />
+      </div>
+    </div>
   </div>
 </template>
 
