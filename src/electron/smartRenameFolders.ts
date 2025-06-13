@@ -1,9 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { getChatCompletions } from './groqChatCompletions';
-import { universalFileReader } from './fileReader';
+import { getChatCompletions } from './AIChatCompletions';
 
-async function smartRenameFolders(rootDir: string, readFileContents: boolean = true) {
+async function smartRenameFolders(rootDir: string): Promise<void> {
   async function traverseAndRename(dir: string): Promise<void> {
     // Get fresh directory contents
     const files = await fs.promises.readdir(dir);
@@ -35,7 +34,7 @@ async function smartRenameFolders(rootDir: string, readFileContents: boolean = t
       let attempts = 4;
       while (errorCount < attempts) {
         try {
-          suggestedName = await getFolderNameSuggestion(dir, latestFiles, readFileContents);
+          suggestedName = await getFolderNameSuggestion(latestFiles);
           await renameDirectory(dir, suggestedName);
           break;
         } catch (error) {
@@ -49,7 +48,7 @@ async function smartRenameFolders(rootDir: string, readFileContents: boolean = t
     }
   }
 
-  async function getFolderNameSuggestion(dir: string, fileNames: string[], readFileContents: boolean): Promise<string> {
+  async function getFolderNameSuggestion(fileNames: string[]): Promise<string> {
     const messages = [{
       role: 'system',
       content: `You are a folder naming assistant. Your task is to suggest a folder name based on the given files.
@@ -58,116 +57,32 @@ Output format: Return ONLY the folder name as a string. Do not include any addit
 
 The folder name should be:
 - Concise and descriptive
-- Based on the file names and contents (if available)
+- Based on the file names
 - Free of special characters that are not allowed in Windows folder names
 - A single string without any additional text or explanation
 
-You have tools available:
-1. read_file_content(file_name: string): Reads the first 300 characters of a file
-2. format_response(folder_name: string): Formats the folder name and returns it
-
-Use the read_file_content tool to get more context about the files only if needed (if the file has a non-descriptive name). You can only read files that can be read as text, so don't try to read .zip, .mp3, etc. (this includes folders which have no extension).
-Use the format_response tool to return the final folder name. Do not return any text other than the folder name - the format_response tool will handle the formatting.`
-    }, {
-      role: 'user',
-      content: `Suggest a folder name based on these files: ${fileNames.join(', ')}
-
 Example output:
 My Documents`
+    }, {
+      role: 'user',
+      content: `Suggest a folder name based on these files: ${fileNames.join(', ')}`
     }];
 
-    const tools = [
-      {
-        name: 'read_file_content',
-        description: 'Reads the first 300 characters of a file',
-        parameters: {
-          type: 'object',
-          properties: {
-            file_name: {
-              type: 'string',
-              description: 'The name of the file to read'
-            }
-          },
-          required: ['file_name']
-        },
-        function: async (args: { file_name: string }) => {
-          try {
-            console.log(`Reading file ${args.file_name}`);
-            const { buffer } = await universalFileReader(path.join(dir, args.file_name));
-            const content = buffer.toString('utf8');
-            return content.substring(0, 300);
-          } catch (error) {
-            console.error(`Error reading file ${args.file_name}:`, error);
-            return 'Error reading file';
-          }
-        }
-      },
-      {
-        name: 'format_response',
-        description: 'Formats the folder name and returns it',
-        parameters: {
-          type: 'object',
-          properties: {
-            folder_name: {
-              type: 'string',
-              description: 'The folder name to format'
-            }
-          },
-          required: ['folder_name']
-        },
-        function: async (args: { folder_name: string }) => {
-          // Clean the folder name
-          let cleanedName = args.folder_name.trim();
-          cleanedName = cleanedName.replace(/[<>:"/\\|?*]/g, '');
-          cleanedName = cleanedName.replace(/\s+/g, ' ').trim();
-          
-          // If the name is empty after cleaning, use a default
-          if (cleanedName.length === 0) {
-            console.log('Empty folder name after cleaning, using default');
-            return 'Unnamed Folder';
-          }
-          
-          return cleanedName;
-        }
-      }
-    ].filter(tool => {
-      // Only include the file reading tool if readFileContents is true
-      return !(tool.name === 'read_file_content' && !readFileContents);
-    });
-
-    let completion = await getChatCompletions(messages, tools);
-    
-    // If the model wants to use a tool
-    if (completion.choices[0].message.tool_calls) {
-      for (const toolCall of completion.choices[0].message.tool_calls) {
-        const args = JSON.parse(toolCall.function.arguments);
-        const tool = tools.find(t => t.name === toolCall.function.name);
-        if (!tool) {
-          console.error(`Tool ${toolCall.function.name} not found`);
-          return 'Unnamed Folder';
-        }
-        
-        // Execute the tool function
-        const result = await tool.function(args);
-        
-        // If it's the format_response tool, return the result immediately
-        if (toolCall.function.name === 'format_response') {
-          return result;
-        }
-        
-        // For other tools, add the result to the conversation
-        messages.push({
-          role: 'assistant',
-          content: `Tool response: ${result}`
-        });
-        
-        // Get a new completion with the tool result
-        completion = await getChatCompletions(messages, tools);
-      }
-    }
+    const completion = await getChatCompletions(messages);
 
     if (completion && completion.choices[0].message && completion.choices[0].message.content) {
-      return completion.choices[0].message.content.trim();
+      // Clean the folder name
+      let cleanedName = completion.choices[0].message.content.trim();
+      cleanedName = cleanedName.replace(/[<>:"/\\|?*]/g, '');
+      cleanedName = cleanedName.replace(/\s+/g, ' ').trim();
+      
+      // If the name is empty after cleaning, use a default
+      if (cleanedName.length === 0) {
+        console.log('Empty folder name after cleaning, using default');
+        return 'Unnamed Folder';
+      }
+      
+      return cleanedName;
     } else {
       console.error('Failed to get a valid folder name suggestion from OpenRouter.');
       return 'Unnamed Folder';

@@ -25,9 +25,100 @@ a:hover {
 body {
   margin: 0;
   display: flex;
-  place-items: center;
+  justify-content: center;
+  align-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background: linear-gradient(135deg, #232526 0%, #414345 100%);
+}
+
+.app-bg {
+  min-height: 100vh;
+  min-width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.center-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+.search-card {
+  background: #22252a;
+  padding: 2rem 2.5rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 6px 32px 0 rgba(0,0,0,0.18), 0 1.5px 4px 0 rgba(60,60,60,0.10);
+  margin-bottom: 1.5rem;
+  width: 420px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.main-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: #f6f7fa;
+  margin-bottom: 0.2em;
+  text-align: center;
+}
+
+.subtitle {
+  color: #b0b3b8;
+  font-size: 1.2rem;
+  margin-bottom: 1.2em;
+  text-align: center;
+}
+
+.actions-row {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 1.2em;
+}
+
+/* Style buttons for modern look */
+button {
+  border-radius: 1em;
+  border: none;
+  padding: 0.75em 1.7em;
+  font-size: 1.1em;
+  font-weight: 600;
+  font-family: inherit;
+  background: linear-gradient(90deg, #646cff 0%, #535bf2 100%);
+  color: #fff;
+  box-shadow: 0 2px 12px 0 rgba(60,60,60,0.13);
+  cursor: pointer;
+  transition: background 0.18s, transform 0.12s, box-shadow 0.18s;
+  margin: 0.2em;
+  outline: none;
+}
+button:hover, button:focus {
+  background: linear-gradient(90deg, #535bf2 0%, #646cff 100%);
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 4px 18px 0 rgba(60,60,60,0.18);
+}
+
+@media (max-width: 600px) {
+  .search-card {
+    padding: 1rem 0.5rem;
+    width: 98vw;
+  }
+  .main-title {
+    font-size: 2rem;
+  }
+  .actions-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
 }
 
 h1 {
