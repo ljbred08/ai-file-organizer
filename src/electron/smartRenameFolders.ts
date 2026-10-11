@@ -99,4 +99,8 @@ My Documents`
   await traverseAndRename(rootDir);
 }
 
+async function smartRenameFiles(rootDir: string): Promise<void> {
+  
+}
+
 export { smartRenameFolders };
