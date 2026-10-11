@@ -77,7 +77,13 @@ cd ai-file-organizer
 pnpm install
 ```
 
-Create a `.env` file in the project root:
+Copy the example env file and fill in your keys:
+
+```bash
+cp .env.example .env
+```
+
+`.env` is gitignored — it must never be committed. The variables it can hold:
 
 ```dotenv
 # Chat / LLM provider (OpenAI-compatible). Defaults to OpenRouter if unset.
@@ -102,13 +108,14 @@ pnpm dev
 
 | Variable | Read by | Required | Purpose |
 | --- | --- | --- | --- |
-| `AI_API_KEY` | `AIChatCompletions.ts` | Yes | API key for the chat provider. Module load throws `*_API_KEY environment variable not set` if missing. |
+| `AI_API_KEY` | `AIChatCompletions.ts` | Yes\* | API key for the chat provider. Canonical name. |
+| `OPENROUTER_API_KEY` | `AIChatCompletions.ts` | — | Accepted as a fallback for `AI_API_KEY` (legacy name from before the OpenAI SDK switch). |
 | `AI_BASE_URL` | `AIChatCompletions.ts` | No | OpenAI-compatible base URL. Defaults to `https://openrouter.ai/api/v1`. |
 | `AI_MODEL` | `AIChatCompletions.ts` | No | Chat model. Defaults to `meta-llama/llama-3.1-8b-instruct`. |
 | `VOYAGE_API_KEY` | `embeddingUtils.ts` | Yes | Voyage AI key for text and multimodal embeddings. |
 | `REPLICATE_API_TOKEN` | `replicate` SDK | No | Only for the `jina-clip-v2` / `imagebind` embedding paths. |
 
-> ⚠️ **Key-name mismatch:** the `.env` committed to this repository defines `OPENROUTER_API_KEY`, but `src/electron/AIChatCompletions.ts` reads `AI_API_KEY`. As checked in, the app will throw on startup unless you add `AI_API_KEY` to your `.env`. See [Security](#security).
+\* Only required for **Smart Rename Folders**. The key is resolved lazily when the LLM is first called, so a missing key no longer prevents the app from starting — indexing, search, and clustering all work without it. If no key is found, folder naming fails with `Missing chat API key: set AI_API_KEY (or OPENROUTER_API_KEY) in your .env file.`
 
 ## Usage
 
@@ -208,14 +215,18 @@ The Vectra index lives on disk in the Electron user-data directory:
 
 ## Security
 
-⚠️ **API keys are committed to this repository.** `.env` is tracked by git and contains real-looking values for `REPLICATE_API_TOKEN`, `VOYAGE_API_KEY`, and `OPENROUTER_API_KEY`, and it has been in history since commits `06f996a` and `25499e0`.
+`.env` is **not tracked** by git and is excluded via `.gitignore`. Secrets belong in `.env` only — never in tracked files, logs, or issue reports. Use `.env.example` as the template for what to set.
 
-Anyone with read access to this repo (it's public) can use those keys. Before doing anything else:
+### ⚠️ Previously leaked keys must still be rotated
 
-1. **Rotate all three keys** at Voyage AI, Replicate, and OpenRouter.
-2. **Untrack the file:** `git rm --cached .env`, add `.env` to `.gitignore`, and commit.
-3. Add a **`.env.example`** with placeholder values so contributors know what to set.
-4. Note that a key pushed to a public repo may live on in forks and caches; rotation is the only real fix — rewriting history is optional cleanup.
+`.env` **was** committed to this public repository, including values for `REPLICATE_API_TOKEN`, `VOYAGE_API_KEY`, and `OPENROUTER_API_KEY`. It appears in history at commits `06f996a` and `25499e0`. Untracking the file stops future leaks but does **not** invalidate the exposed values.
+
+If those keys were ever live, treat them as compromised:
+
+1. **Rotate them** in the Voyage AI, Replicate, and OpenRouter dashboards. This is the only step that actually revokes access.
+2. Anyone with read access to a public repo — and any fork or cache of it — may already have copied them.
+
+Optional cleanup: purge `.env` from history (`git filter-repo --path .env --invert-paths`) and force-push. This is **not** a substitute for rotation, because forks and caches keep their own copies.
 
 ## Not yet implemented
 
